@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kato — Proposal Builder</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --pink: #FE5476; --pink-light: #FFF0F3;
+    --black: #211E42; --ink: #211E42; --ink-60: #6B6B6B;
+    --ink-30: #C8C8C8; --ink-10: #F6F6F4; --white: #FFFFFF;
+    --bg: #F2EFE9; --shadow: 0 2px 16px rgba(0,0,0,0.08);
+  }
+  body { font-family:'Inter',sans-serif; background:var(--bg); color:var(--ink); min-height:100vh; display:flex; flex-direction:column; }
+
+  header { background:var(--pink); padding:14px 36px; display:flex; align-items:center; justify-content:space-between; }
+  .header-logo img { height:22px; display:block; }
+  .header-tag { font-size:11px; font-weight:500; letter-spacing:1.5px; text-transform:uppercase; color:rgba(255,255,255,0.7); }
+
+  .app { display:grid; grid-template-columns:440px 1fr; flex:1; min-height:0; }
+
+  .panel-left { background:var(--white); border-right:1px solid #E0DDD6; overflow-y:auto; padding:28px 26px; display:flex; flex-direction:column; gap:26px; }
+  .section-title { font-size:9.5px; font-weight:600; letter-spacing:1.4px; text-transform:uppercase; color:var(--pink); margin-bottom:12px; }
+  .field-group { display:flex; flex-direction:column; gap:5px; }
+  .field-group label { font-size:12.5px; color:var(--ink-60); }
+  .field-group input, .field-group textarea, .field-group select { border:1px solid var(--ink-30); border-radius:7px; padding:9px 12px; font-size:13.5px; font-family:'Inter',sans-serif; color:var(--ink); background:var(--white); outline:none; transition:border-color 0.15s; }
+  .field-group input:focus, .field-group textarea:focus, .field-group select:focus { border-color:var(--pink); box-shadow:0 0 0 3px rgba(254,84,118,0.1); }
+  .field-group textarea { resize:vertical; min-height:36px; }
+
+  .checklist { display:flex; flex-direction:column; gap:5px; }
+  .check-item { display:flex; align-items:center; gap:10px; padding:8px 11px; border-radius:7px; cursor:pointer; transition:background 0.12s; border:1px solid transparent; user-select:none; }
+  .check-item:hover { background:var(--ink-10); }
+  .check-item.checked { background:var(--pink-light); border-color:#FFBCC8; }
+  .check-item input[type=checkbox] { display:none; }
+  .check-box { width:17px; height:17px; border-radius:4px; border:1.5px solid var(--ink-30); background:var(--white); flex-shrink:0; display:flex; align-items:center; justify-content:center; transition:all 0.12s; }
+  .check-item.checked .check-box { background:var(--pink); border-color:var(--pink); }
+  .check-box svg { display:none; }
+  .check-item.checked .check-box svg { display:block; }
+  .check-label { font-size:13px; line-height:1.4; }
+
+  /* Tag input */
+  .tag-input-wrap { display:flex; flex-wrap:wrap; gap:5px; align-items:center; border:1px solid var(--ink-30); border-radius:7px; padding:6px 10px; min-height:38px; cursor:text; transition:border-color 0.15s; }
+  .tag-input-wrap:focus-within { border-color:var(--pink); box-shadow:0 0 0 3px rgba(254,84,118,0.1); }
+  .tag-input-wrap input { border:none; outline:none; font-size:13px; font-family:'Inter',sans-serif; color:var(--ink); flex:1; min-width:120px; padding:2px 0; background:transparent; }
+  .tag { display:inline-flex; align-items:center; gap:4px; background:var(--pink-light); color:var(--pink); font-size:11.5px; font-weight:500; padding:3px 8px; border-radius:100px; border:1px solid #FFBCC8; }
+  .tag-remove { cursor:pointer; font-size:13px; line-height:1; opacity:0.6; transition:opacity 0.12s; }
+  .tag-remove:hover { opacity:1; }
+
+  .commercials-grid { display:grid; grid-template-columns:1fr 1fr; gap:9px; }
+  .comm-year-label { font-size:10px; font-weight:600; letter-spacing:0.8px; text-transform:uppercase; color:var(--pink); margin-bottom:8px; }
+
+  /* Module rows */
+  .module-block { border:1px solid var(--ink-10); border-radius:8px; padding:14px; margin-bottom:10px; position:relative; }
+  .module-block-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
+  .module-block-name { font-size:12px; font-weight:600; color:var(--pink); text-transform:uppercase; letter-spacing:0.6px; }
+  .module-row .field-group { gap:3px; }
+  .module-row .field-group label { font-size:11px; }
+  .btn-remove-mod { width:28px; height:36px; border:none; background:none; color:var(--ink-30); cursor:pointer; font-size:18px; display:flex; align-items:center; justify-content:center; border-radius:6px; transition:all 0.12s; margin-bottom:2px; }
+  .btn-remove-mod:hover { background:#FFF0F3; color:var(--pink); }
+  .btn-add { display:inline-flex; align-items:center; gap:6px; background:var(--white); color:var(--pink); font-family:'Inter',sans-serif; font-size:12px; font-weight:600; padding:8px 14px; border-radius:7px; border:1.5px dashed var(--pink); cursor:pointer; transition:all 0.15s; }
+  .btn-add:hover { background:var(--pink-light); }
+
+  .panel-right { overflow-y:auto; padding:32px 40px; display:flex; flex-direction:column; gap:18px; }
+  .preview-actions { display:flex; align-items:center; justify-content:space-between; }
+  .preview-label { font-size:11.5px; color:var(--ink-60); letter-spacing:0.4px; font-weight:500; text-transform:uppercase; }
+  .btn-download { display:inline-flex; align-items:center; gap:8px; background:var(--pink); color:#fff; font-family:'Inter',sans-serif; font-size:13px; font-weight:600; padding:10px 20px; border-radius:8px; border:none; cursor:pointer; transition:background 0.15s; }
+  .btn-download:hover { background:#e8415f; }
+
+  #proposal-preview { background:var(--white); border-radius:14px; box-shadow:var(--shadow); overflow:hidden; max-width:720px; width:100%; }
+  .prop-header { background:var(--pink); padding:28px 40px 24px; color:#fff; }
+  .prop-header-logo { margin-bottom:18px; display:block; }
+  .prop-header-logo img { height:28px; width:auto; display:block; }
+  .prop-title { font-size:26px; font-weight:700; letter-spacing:-0.4px; margin-bottom:6px; color:#211E42; }
+  .prop-meta { font-size:12px; color:rgba(255,255,255,0.75); display:flex; gap:20px; }
+  .prop-body { padding:24px 40px; display:flex; flex-direction:column; gap:18px; }
+  .prop-section-title { font-size:11px; font-weight:600; letter-spacing:1px; text-transform:uppercase; color:var(--pink); margin-bottom:3px; padding-bottom:6px; border-bottom:1.5px solid var(--pink-light); }
+  .prop-section-sub { font-size:11.5px; color:var(--ink-60); margin-bottom:8px; margin-top:3px; }
+  .prop-overview { font-size:12.5px; line-height:1.65; color:var(--ink); }
+  .prop-pills { display:flex; flex-wrap:wrap; gap:6px; margin-top:4px; }
+  .pill { background:var(--pink-light); color:var(--pink); font-size:11px; font-weight:500; padding:4px 10px; border-radius:100px; border:1px solid #FFBCC8; }
+  .pill.empty { color:var(--ink-60); background:var(--ink-10); border-color:var(--ink-30); font-style:italic; }
+  .prop-results-list { display:flex; flex-direction:column; gap:5px; margin-top:3px; }
+  .prop-result-item { display:flex; align-items:center; gap:10px; font-size:12.5px; }
+  .dot { width:6px; height:6px; border-radius:50%; background:var(--pink); flex-shrink:0; }
+  .prop-customer-stories { margin-top:10px; font-size:11.5px; color:var(--ink-60); }
+  .prop-customer-stories a { color:var(--pink); text-decoration:none; font-weight:500; }
+  .prop-customer-stories a:hover { text-decoration:underline; }
+  .prop-impl-list { display:flex; flex-direction:column; gap:5px; margin-top:4px; }
+  .impl-item { font-size:12px; display:flex; align-items:center; gap:8px; }
+  .num-badge { width:20px; height:20px; border-radius:50%; background:var(--pink); color:#fff; font-size:10px; font-weight:600; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .commercials-table { width:100%; border-collapse:collapse; margin-top:8px; font-size:12px; }
+  .commercials-table th { background:var(--ink-10); text-align:left; padding:7px 12px; font-weight:600; font-size:10px; letter-spacing:0.6px; text-transform:uppercase; color:var(--ink-60); }
+  .commercials-table td { padding:7px 12px; border-bottom:1px solid var(--ink-10); }
+  .commercials-table tr:last-child td { border-bottom:none; }
+  .commercials-table td:first-child { color:var(--ink-60); font-size:11.5px; }
+  .prop-footer { border-top:1px solid var(--ink-10); padding:12px 40px; display:flex; justify-content:space-between; align-items:center; font-size:11px; color:var(--ink-60); background:var(--ink-10); }
+  .prop-footer-logo img { height:16px; width:auto; display:block; }
+
+  @media print {
+    body { background:#fff; }
+    header, .panel-left, .preview-actions { display:none !important; }
+    .app { display:block; }
+    .panel-right { padding:0; }
+    #proposal-preview { box-shadow:none; border-radius:0; max-width:100%; }
+  }
+  @media (max-width:900px) {
+    .app { grid-template-columns:1fr; }
+    .panel-left { border-right:none; border-bottom:1px solid #E0DDD6; }
+    .panel-right { padding:24px 20px; }
+    .prop-body, .prop-header { padding-left:24px; padding-right:24px; }
+    .prop-footer { padding-left:24px; padding-right:24px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-logo">
+    <img src="https://cdn.prod.website-files.com/64f9ea74841751de3c1369ce/6509f73d020ca68338526747_Kato%20logo.svg" alt="Kato" crossorigin="anonymous" style="height:20px;width:auto;display:block;">
+  </div>
+  <span class="header-tag">Proposal Builder</span>
+</header>
+
+<div class="app">
+  <div class="panel-left">
+    <div>
+      <div class="section-title">Client details</div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div class="field-group"><label>Client name</label><input type="text" id="clientName" placeholder="e.g. Savills Manchester" oninput="update()"></div>
+        <div class="field-group"><label>Proposal date</label><input type="date" id="propDate" oninput="update()"></div>
+        <div class="field-group"><label>Prepared by</label><input type="text" id="preparedBy" placeholder="Your name" oninput="update()"></div>
+      </div>
+    </div>
+    <div>
+      <div class="section-title">Your challenges</div>
+      <div class="checklist" id="challenges-list"></div>
+      <div class="field-group" style="margin-top:8px">
+        <label>Additional challenges <span style="font-weight:400;color:var(--ink-30);font-size:11px;">press Enter to add</span></label>
+        <div class="tag-input-wrap" id="challenge-tags-wrap" onclick="this.querySelector('input').focus()">
+          <input type="text" id="challengeTagInput" placeholder="Type and press Enter…">
+        </div>
+      </div>
+    </div>
+    <div>
+      <div class="section-title">How Kato Pro helps</div>
+      <div class="checklist" id="helps-list"></div>
+      <div class="field-group" style="margin-top:8px">
+        <label>Additional benefits <span style="font-weight:400;color:var(--ink-30);font-size:11px;">press Enter to add</span></label>
+        <div class="tag-input-wrap" id="helps-tags-wrap" onclick="this.querySelector('input').focus()">
+          <input type="text" id="helpsTagInput" placeholder="Type and press Enter…">
+        </div>
+      </div>
+    </div>
+    <div>
+      <div class="section-title">Customer success stories</div>
+      <div class="checklist" id="stories-list"></div>
+    </div>
+    <div>
+      <div class="section-title">Commercials</div>
+      <div style="display:flex;flex-direction:column;gap:16px">
+        <div>
+          <div class="comm-year-label">Year 1</div>
+          <div class="commercials-grid">
+            <div class="field-group"><label>Licences</label><input type="text" id="y1_licences" placeholder="e.g. 10" oninput="update()"></div>
+            <div class="field-group"><label>Subscription (£/user/mo)</label><input type="text" id="y1_sub" placeholder="e.g. £75" oninput="update()"></div>
+            <div class="field-group"><label>One-off fee</label><input type="text" id="y1_onboard" placeholder="e.g. £1,200" oninput="update()"></div>
+            <div class="field-group"><label>Billing frequency</label><select id="y1_billing" onchange="update()"><option value="">— Select —</option><option value="Annually">Annually</option><option value="Quarterly">Quarterly</option></select></div>
+          </div>
+        </div>
+        <div>
+          <div class="comm-year-label">Year 2 <span style="font-weight:400;font-size:9px;letter-spacing:0;text-transform:none;color:var(--ink-60);">(leave empty to hide)</span></div>
+          <div class="commercials-grid">
+            <div class="field-group"><label>Licences</label><input type="text" id="y2_licences" placeholder="e.g. 10" oninput="update()"></div>
+            <div class="field-group"><label>Subscription (£/user/mo)</label><input type="text" id="y2_sub" placeholder="e.g. £75" oninput="update()"></div>
+            <div class="field-group"><label>Billing frequency</label><select id="y2_billing" onchange="update()"><option value="">— Select —</option><option value="Annually">Annually</option><option value="Quarterly">Quarterly</option></select></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div>
+      <div class="section-title">Additional modules</div>
+      <div id="modules-inputs"></div>
+      <button class="btn-add" onclick="addModuleRow()" style="margin-top:6px;">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Add module
+      </button>
+    </div>
+  </div>
+
+  <div class="panel-right">
+    <div class="preview-actions">
+      <span class="preview-label">Live preview</span>
+      <button class="btn-download" onclick="downloadPDF()">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Download PDF
+      </button>
+    </div>
+
+    <div id="proposal-preview">
+      <div class="prop-header">
+        <div class="prop-header-logo">
+          <img src="https://cdn.prod.website-files.com/64f9ea74841751de3c1369ce/6509f73d020ca68338526747_Kato%20logo.svg" alt="Kato" crossorigin="anonymous">
+        </div>
+        <div class="prop-title" id="prev-title">Proposal</div>
+        <div class="prop-meta">
+          <span id="prev-client"></span>
+          <span id="prev-date"></span>
+        </div>
+      </div>
+
+      <div class="prop-body">
+        <div class="prop-section">
+          <div class="prop-section-title">Kato Pro Overview</div>
+          <div class="prop-overview">Kato Pro is a modern, easy to use operating system for commercial agencies, bringing together your data, automating high quality marketing, centralising enquiries, and streamlining deal management and client reporting. Trusted by 700+ UK agencies, from independent firms to national players, Kato helps teams move faster, win more business, and deliver a better client experience.</div>
+        </div>
+        <div class="prop-section">
+          <div class="prop-section-title">Your challenges</div>
+          <div class="prop-section-sub">Based on our discussions</div>
+          <div class="prop-pills" id="prev-challenges"><span class="pill empty">No challenges selected yet</span></div>
+        </div>
+        <div class="prop-section">
+          <div class="prop-section-title">How Kato Pro helps</div>
+          <div class="prop-section-sub">Save time, win more business, and improve data visibility and control</div>
+          <div class="prop-pills" id="prev-helps"><span class="pill empty">No features selected yet</span></div>
+        </div>
+        <div class="prop-section">
+          <div class="prop-section-title">Results</div>
+          <div class="prop-section-sub">Typical impact</div>
+          <div class="prop-results-list">
+            <div class="prop-result-item"><div class="dot"></div>Save 7–16 hours per week per fee earner</div>
+            <div class="prop-result-item"><div class="dot"></div>Reduce speed to market from days to minutes</div>
+            <div class="prop-result-item"><div class="dot"></div>Capture 100% of website and portal enquiries</div>
+            <div class="prop-result-item"><div class="dot"></div>2–5x increase in marketing reach through email campaigns</div>
+            <div class="prop-result-item"><div class="dot"></div>Cut time spent on client reporting by 50%</div>
+          </div>
+          <div id="prev-customer-stories"></div>
+        </div>
+        <div class="prop-section">
+          <div class="prop-section-title">Implementation</div>
+          <div class="prop-section-sub">Dedicated, hands-on onboarding project</div>
+          <div class="prop-impl-list">
+            <div class="impl-item"><div class="num-badge">1</div>Data migration and structuring</div>
+            <div class="impl-item"><div class="num-badge">2</div>Platform setup</div>
+            <div class="impl-item"><div class="num-badge">3</div>Website and portal integrations</div>
+            <div class="impl-item"><div class="num-badge">4</div>Marketing outputs and template configuration</div>
+            <div class="impl-item"><div class="num-badge">5</div>Training, onboarding and ongoing account management</div>
+          </div>
+        </div>
+        <div class="prop-section">
+          <div class="prop-section-title">Commercials</div>
+          <table class="commercials-table" id="commercials-table">
+            <thead><tr><th>Item</th><th>Year 1</th><th id="th-y2" style="display:none;">Year 2</th></tr></thead>
+            <tbody>
+              <tr><td>Licences</td><td id="ct-y1-lic">—</td><td id="ct-y2-lic" style="display:none;">—</td></tr>
+              <tr><td>Subscription fee</td><td id="ct-y1-sub">—</td><td id="ct-y2-sub" style="display:none;">—</td></tr>
+              <tr><td>One-off fee</td><td id="ct-y1-onboard">—</td><td id="ct-y2-onboard" style="display:none;">—</td></tr>
+              <tr><td>Billing frequency</td><td id="ct-y1-bill">—</td><td id="ct-y2-bill" style="display:none;">—</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="prop-section" id="modules-section" style="display:none;">
+          <div class="prop-section-title">Additional Modules</div>
+          <div id="modules-preview-content"></div>
+        </div>
+      </div>
+
+      <div class="prop-footer">
+        <span id="prev-preparedby-footer">Prepared by Kato</span>
+        <div class="prop-footer-logo">
+          <img src="https://cdn.prod.website-files.com/64f9ea74841751de3c1369ce/6509f73d020ca68338526747_Kato%20logo.svg" alt="Kato" crossorigin="anonymous">
+        </div>
+        <span id="prev-footer-date"></span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<script>
+var CHALLENGES = [
+  "CRM not meeting requirements",
+  "No central client database",
+  "Disconnected data and systems",
+  "Admin heavy processes",
+  "Inefficient website and portal updates",
+  "Slow brochure and marketing creation",
+  "Enquiries not centrally captured",
+  "Limited email campaign capability",
+  "Difficulty matching demand and supply",
+  "Limited ability to re-engage historic demand",
+  "No unified view of transactions and comparables",
+  "Risk of missing lease events",
+  "Limited visibility of pipeline and activity",
+  "Cumbersome client reporting"
+];
+
+var HELPS = [
+  "One central platform for all data, clients and activity",
+  "Captures and tracks all enquiries in one place",
+  "End-to-end deal and pipeline management with full visibility",
+  "Automates marketing, brochures and portal publishing",
+  "Built-in email marketing and campaign tracking",
+  "Intelligent matching of demand and supply",
+  "Re-engage historic demand instantly",
+  "Central database for transactions, comparables and lease alerts",
+  "Digital client reporting with branded exports"
+];
+
+var CUSTOMER_STORIES = [
+  { name:"Fisher German", url:"https://www.kato.app/articles/driving-clarity-speed-strategic-control-at-national-scale" },
+  { name:"Avison Young", url:"https://www.kato.app/articles/from-legacy-to-leader-inside-avison-youngs-digital-transformation" },
+  { name:"Carter Towler", url:"https://www.kato.app/articles/how-carter-towler-maximise-the-value-of-their-marketplace-membership" },
+  { name:"Sixteen Real Estate", url:"https://www.kato.app/articles/sixteen-real-estate-saves-sixteen-hours-a-week-for-each-fee-earner" },
+  { name:"G M Brown", url:"https://www.kato.app/articles/winner-of-dealmaker-of-the-year-award-saves-2-days-a-week-using-kato" },
+  { name:"Vail Williams", url:"https://www.kato.app/articles/how-vail-williams-improved-agency-efficiency-with-kato" },
+  { name:"CDG", url:"https://www.kato.app/articles/how-cdg-are-more-efficient-with-kato" },
+  { name:"Robert Irving Burns", url:"https://www.kato.app/articles/kato-makes-rib-more-efficient" },
+  { name:"BDG Sparkes Porter", url:"https://www.kato.app/articles/how-bdg-sparkes-porter-are-more-efficient-with-kato" },
+  { name:"Frost Meadowcroft", url:"https://www.kato.app/articles/why-kato-is-frost-meadowcrofts-daily-dashboard" }
+];
+
+var state = { challenges: {}, helps: {}, stories: {} };
+var challengeTags = [];
+var helpsTags = [];
+var moduleRows = [];
+var moduleCounter = 0;
+
+/* ─── Build customer story checklist ─── */
+(function(){
+  var container = document.getElementById('stories-list');
+  CUSTOMER_STORIES.forEach(function(s, i){
+    var label = document.createElement('label');
+    label.className = 'check-item';
+    label.innerHTML = '<input type="checkbox" style="display:none" onchange="toggleStory('+i+')">'
+      + '<div class="check-box"><svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4L3.5 6.5L9 1" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></div>'
+      + '<span class="check-label">' + s.name + '</span>';
+    container.appendChild(label);
+  });
+})();
+
+function toggleStory(idx) {
+  if (state.stories[idx]) { delete state.stories[idx]; } else { state.stories[idx] = true; }
+  var items = document.getElementById('stories-list').querySelectorAll('.check-item');
+  for (var i = 0; i < items.length; i++) {
+    items[i].classList.toggle('checked', !!state.stories[i]);
+  }
+  update();
+}
+
+/* ─── Checklists ─── */
+function buildChecklist(items, containerId, stateKey) {
+  var container = document.getElementById(containerId);
+  for (var i = 0; i < items.length; i++) {
+    (function(index, item) {
+      var label = document.createElement('label');
+      label.className = 'check-item';
+      label.innerHTML = '<input type="checkbox" style="display:none" onchange="toggleItem(\'' + stateKey + '\',' + index + ')">'
+        + '<div class="check-box"><svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4L3.5 6.5L9 1" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></div>'
+        + '<span class="check-label">' + item + '</span>';
+      container.appendChild(label);
+    })(i, items[i]);
+  }
+}
+
+function toggleItem(key, idx) {
+  if (state[key][idx]) { delete state[key][idx]; } else { state[key][idx] = true; }
+  var cid = key === 'challenges' ? 'challenges-list' : 'helps-list';
+  var items = document.getElementById(cid).querySelectorAll('.check-item');
+  for (var i = 0; i < items.length; i++) {
+    items[i].classList.toggle('checked', !!state[key][i]);
+  }
+  update();
+}
+
+/* ─── Tag inputs (Enter to add) ─── */
+function setupTagInput(inputId, wrapId, tagsArray) {
+  var input = document.getElementById(inputId);
+  input.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      var v = input.value.trim();
+      if (!v) return;
+      tagsArray.push(v);
+      input.value = '';
+      renderTags(wrapId, inputId, tagsArray);
+      update();
+    }
+    if (e.key === 'Backspace' && input.value === '' && tagsArray.length > 0) {
+      tagsArray.pop();
+      renderTags(wrapId, inputId, tagsArray);
+      update();
+    }
+  });
+}
+
+function renderTags(wrapId, inputId, tagsArray) {
+  var wrap = document.getElementById(wrapId);
+  var input = document.getElementById(inputId);
+  /* Remove existing tags */
+  wrap.querySelectorAll('.tag').forEach(function(t){ t.remove(); });
+  /* Add tags before the input */
+  tagsArray.forEach(function(text, idx) {
+    var tag = document.createElement('span');
+    tag.className = 'tag';
+    tag.innerHTML = text + ' <span class="tag-remove" data-idx="' + idx + '">&times;</span>';
+    wrap.insertBefore(tag, input);
+  });
+  /* Bind remove buttons */
+  wrap.querySelectorAll('.tag-remove').forEach(function(btn){
+    btn.onclick = function(e){
+      e.stopPropagation();
+      tagsArray.splice(parseInt(btn.dataset.idx), 1);
+      renderTags(wrapId, inputId, tagsArray);
+      update();
+    };
+  });
+}
+
+/* ─── Module rows ─── */
+function addModuleRow() {
+  var id = moduleCounter++;
+  moduleRows.push(id);
+  var container = document.getElementById('modules-inputs');
+  var block = document.createElement('div');
+  block.className = 'module-block';
+  block.id = 'mod-row-' + id;
+  block.innerHTML =
+    '<div class="module-block-header"><div class="field-group" style="flex:1;margin-right:10px;"><label>Module name</label><input type="text" id="mod_name_'+id+'" placeholder="e.g. Kato Insights" oninput="update()"></div>'
+    + '<button class="btn-remove-mod" onclick="removeModuleRow('+id+')" title="Remove" style="margin-bottom:0;">&times;</button></div>'
+    + '<div class="comm-year-label" style="margin-top:4px;">Year 1</div>'
+    + '<div class="commercials-grid">'
+    + '<div class="field-group"><label>Subscription (£/user/mo)</label><input type="text" id="mod_y1_sub_'+id+'" placeholder="e.g. £50" oninput="update()"></div>'
+    + '<div class="field-group"><label>Billing frequency</label><select id="mod_y1_bill_'+id+'" onchange="update()"><option value="">— Select —</option><option value="Annually">Annually</option><option value="Quarterly">Quarterly</option></select></div>'
+    + '</div>'
+    + '<div class="comm-year-label" style="margin-top:12px;">Year 2 <span style="font-weight:400;font-size:9px;letter-spacing:0;text-transform:none;color:var(--ink-60);">(leave empty to hide)</span></div>'
+    + '<div class="commercials-grid">'
+    + '<div class="field-group"><label>Subscription (£/user/mo)</label><input type="text" id="mod_y2_sub_'+id+'" placeholder="e.g. £50" oninput="update()"></div>'
+    + '<div class="field-group"><label>Billing frequency</label><select id="mod_y2_bill_'+id+'" onchange="update()"><option value="">— Select —</option><option value="Annually">Annually</option><option value="Quarterly">Quarterly</option></select></div>'
+    + '</div>';
+  container.appendChild(block);
+  update();
+}
+
+function removeModuleRow(id) {
+  var row = document.getElementById('mod-row-' + id);
+  if (row) row.remove();
+  moduleRows = moduleRows.filter(function(r){ return r !== id; });
+  update();
+}
+
+/* ─── Helpers ─── */
+function val(id) {
+  var el = document.getElementById(id);
+  return el ? el.value.trim() : '';
+}
+
+function fmtDate(d) {
+  if (!d) return '';
+  var dt = new Date(d + 'T00:00:00');
+  return dt.toLocaleDateString('en-GB', { day:'numeric', month:'long', year:'numeric' });
+}
+
+function updatePills(containerId, selected, allItems, tagsArray) {
+  var c = document.getElementById(containerId);
+  c.innerHTML = '';
+  var keys = Object.keys(selected);
+  if (keys.length === 0 && tagsArray.length === 0) {
+    c.innerHTML = '<span class="pill empty">None selected</span>';
+    return;
+  }
+  keys.sort(function(a,b){ return a-b; }).forEach(function(i) {
+    var s = document.createElement('span');
+    s.className = 'pill';
+    s.textContent = allItems[i];
+    c.appendChild(s);
+  });
+  tagsArray.forEach(function(text) {
+    var s = document.createElement('span');
+    s.className = 'pill';
+    s.textContent = text;
+    c.appendChild(s);
+  });
+}
+
+/* ─── Master update ─── */
+function update() {
+  var client = val('clientName'), date = val('propDate'), prepBy = val('preparedBy');
+  document.getElementById('prev-title').textContent = 'Proposal';
+  document.getElementById('prev-client').textContent = client ? 'Client: ' + client : '';
+  document.getElementById('prev-date').textContent = date ? fmtDate(date) : '';
+  document.getElementById('prev-preparedby-footer').textContent = prepBy ? 'Prepared by ' + prepBy : 'Prepared by Kato';
+  document.getElementById('prev-footer-date').textContent = date ? fmtDate(date) : '';
+
+  updatePills('prev-challenges', state.challenges, CHALLENGES, challengeTags);
+  updatePills('prev-helps', state.helps, HELPS, helpsTags);
+
+  /* Customer stories */
+  var storiesEl = document.getElementById('prev-customer-stories');
+  var storyKeys = Object.keys(state.stories).sort(function(a,b){ return a-b; });
+  if (storyKeys.length > 0) {
+    var label = storyKeys.length === 1 ? 'Customer Story' : 'Customer Stories';
+    var links = storyKeys.map(function(i) {
+      var s = CUSTOMER_STORIES[parseInt(i)];
+      return '<a href="' + s.url + '" target="_blank">' + s.name + '</a>';
+    });
+    storiesEl.className = 'prop-customer-stories';
+    storiesEl.innerHTML = label + ': ' + links.join(' | ');
+  } else {
+    storiesEl.innerHTML = '';
+    storiesEl.className = '';
+  }
+
+  /* Year 1 */
+  document.getElementById('ct-y1-lic').textContent = val('y1_licences') || '\u2014';
+  document.getElementById('ct-y1-sub').textContent = val('y1_sub') ? val('y1_sub') + ' per user/month' : '\u2014';
+  document.getElementById('ct-y1-onboard').textContent = val('y1_onboard') || '\u2014';
+  document.getElementById('ct-y1-bill').textContent = val('y1_billing') || '\u2014';
+
+  /* Year 2: show column only if any Y2 field has a value */
+  var hasY2 = val('y2_licences') || val('y2_sub') || val('y2_billing');
+  var y2Display = hasY2 ? '' : 'none';
+  document.getElementById('th-y2').style.display = y2Display;
+  document.getElementById('ct-y2-lic').style.display = y2Display;
+  document.getElementById('ct-y2-sub').style.display = y2Display;
+  document.getElementById('ct-y2-onboard').style.display = y2Display;
+  document.getElementById('ct-y2-bill').style.display = y2Display;
+  document.getElementById('ct-y2-lic').textContent = val('y2_licences') || '\u2014';
+  document.getElementById('ct-y2-sub').textContent = val('y2_sub') ? val('y2_sub') + ' per user/month' : '\u2014';
+  document.getElementById('ct-y2-onboard').textContent = '\u2014';
+  document.getElementById('ct-y2-bill').textContent = val('y2_billing') || '\u2014';
+
+  /* Additional modules */
+  var modContent = document.getElementById('modules-preview-content');
+  modContent.innerHTML = '';
+  var hasModules = false;
+  moduleRows.forEach(function(id) {
+    var name = val('mod_name_' + id);
+    var y1Sub = val('mod_y1_sub_' + id);
+    var y1Bill = val('mod_y1_bill_' + id);
+    var y2Sub = val('mod_y2_sub_' + id);
+    var y2Bill = val('mod_y2_bill_' + id);
+    if (name || y1Sub || y1Bill) {
+      hasModules = true;
+      var hasY2Mod = y2Sub || y2Bill;
+      var html = '<table class="commercials-table" style="margin-top:6px;margin-bottom:12px;">';
+      html += '<thead><tr><th>' + (name || 'Module') + '</th><th>Year 1</th>';
+      if (hasY2Mod) html += '<th>Year 2</th>';
+      html += '</tr></thead><tbody>';
+      html += '<tr><td>Subscription fee</td><td>' + (y1Sub ? y1Sub + ' per user/month' : '\u2014') + '</td>';
+      if (hasY2Mod) html += '<td>' + (y2Sub ? y2Sub + ' per user/month' : '\u2014') + '</td>';
+      html += '</tr>';
+      html += '<tr><td>Billing frequency</td><td>' + (y1Bill || '\u2014') + '</td>';
+      if (hasY2Mod) html += '<td>' + (y2Bill || '\u2014') + '</td>';
+      html += '</tr>';
+      html += '</tbody></table>';
+      modContent.innerHTML += html;
+    }
+  });
+  document.getElementById('modules-section').style.display = hasModules ? '' : 'none';
+}
+
+/* ─── PDF download ─── */
+function downloadPDF() {
+  var el = document.getElementById('proposal-preview');
+  var client = val('clientName') || 'Proposal';
+  var date = val('propDate') || new Date().toISOString().slice(0,10);
+
+  var clone = el.cloneNode(true);
+  var wrapper = document.createElement('div');
+  wrapper.style.cssText = 'position:fixed;left:-9999px;top:0;width:794px;background:#FE5476;z-index:-1;overflow:hidden;';
+  clone.style.cssText = 'max-width:none;width:100%;border-radius:0;box-shadow:none;margin:0;padding:0;';
+  wrapper.appendChild(clone);
+  document.body.appendChild(wrapper);
+
+  var btn = document.querySelector('.btn-download');
+  btn.textContent = 'Generating\u2026';
+  btn.disabled = true;
+
+  /* Measure actual content height then create a single-page PDF that size */
+  var pxW = 794;
+  var pxH = clone.scrollHeight || clone.offsetHeight;
+  var mmW = pxW * 25.4 / 96;   /* ~210mm (A4 width) */
+  var mmH = pxH * 25.4 / 96;
+
+  var opt = {
+    margin: 0,
+    filename: 'Kato-Proposal-' + client.replace(/\s+/g,'-') + '-' + date + '.pdf',
+    image: { type:'jpeg', quality:0.98 },
+    html2canvas: { scale:2, useCORS:true },
+    jsPDF: { unit:'mm', format:[mmW, mmH], orientation:'portrait' },
+    pagebreak: { mode:['avoid-all'] }
+  };
+
+  html2pdf().set(opt).from(clone).save().then(function() {
+    document.body.removeChild(wrapper);
+    btn.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Download PDF';
+    btn.disabled = false;
+  });
+}
+
+/* ─── Init ─── */
+buildChecklist(CHALLENGES, 'challenges-list', 'challenges');
+buildChecklist(HELPS, 'helps-list', 'helps');
+setupTagInput('challengeTagInput', 'challenge-tags-wrap', challengeTags);
+setupTagInput('helpsTagInput', 'helps-tags-wrap', helpsTags);
+document.getElementById('propDate').valueAsDate = new Date();
+update();
+</script>
+</body>
+</html>
