@@ -144,6 +144,16 @@
       </div>
     </div>
     <div>
+      <div class="section-title">The Impact</div>
+      <div class="checklist" id="impact-list"></div>
+      <div class="field-group" style="margin-top:8px">
+        <label>Additional impacts <span style="font-weight:400;color:var(--ink-30);font-size:11px;">press Enter to add</span></label>
+        <div class="tag-input-wrap" id="impact-tags-wrap" onclick="this.querySelector('input').focus()">
+          <input type="text" id="impactTagInput" placeholder="Type and press Enter…">
+        </div>
+      </div>
+    </div>
+    <div>
       <div class="section-title">How Kato Pro helps</div>
       <div class="checklist" id="helps-list"></div>
       <div class="field-group" style="margin-top:8px">
@@ -217,8 +227,13 @@
         </div>
         <div class="prop-section">
           <div class="prop-section-title">Your challenges</div>
-          <div class="prop-section-sub">Based on our discussions</div>
+          <div class="prop-section-sub">Operational pains we've heard from you</div>
           <div class="prop-pills" id="prev-challenges"><span class="pill empty">No challenges selected yet</span></div>
+        </div>
+        <div class="prop-section">
+          <div class="prop-section-title">The Impact</div>
+          <div class="prop-section-sub">The commercial impacts of the challenges</div>
+          <div class="prop-pills" id="prev-impacts"><span class="pill empty">No impacts selected yet</span></div>
         </div>
         <div class="prop-section">
           <div class="prop-section-title">How Kato Pro helps</div>
@@ -227,7 +242,7 @@
         </div>
         <div class="prop-section">
           <div class="prop-section-title">Results</div>
-          <div class="prop-section-sub">Typical impact</div>
+          <div class="prop-section-sub">Typical outcomes for our customers</div>
           <div class="prop-results-list">
             <div class="prop-result-item"><div class="dot"></div>Save 7–16 hours per week per fee earner</div>
             <div class="prop-result-item"><div class="dot"></div>Reduce speed to market from days to minutes</div>
@@ -308,6 +323,20 @@ var HELPS = [
   "Digital client reporting with branded exports"
 ];
 
+var IMPACTS = [
+  "Missed opportunities",
+  "Damaged brand perception",
+  "Reduced productivity",
+  "Less time spent on revenue generating activity",
+  "Increased data and compliance risk",
+  "Falling behind competitors",
+  "Poor pipeline visibility",
+  "Slower time to market",
+  "No visibility on marketing ROI",
+  "Inconsistent client service",
+  "Risk of missing lease events"
+];
+
 var CUSTOMER_STORIES = [
   { name:"Fisher German", url:"https://www.kato.app/articles/driving-clarity-speed-strategic-control-at-national-scale" },
   { name:"Avison Young", url:"https://www.kato.app/articles/from-legacy-to-leader-inside-avison-youngs-digital-transformation" },
@@ -321,8 +350,9 @@ var CUSTOMER_STORIES = [
   { name:"Frost Meadowcroft", url:"https://www.kato.app/articles/why-kato-is-frost-meadowcrofts-daily-dashboard" }
 ];
 
-var state = { challenges: {}, helps: {}, stories: {} };
+var state = { challenges: {}, helps: {}, impacts: {}, stories: {} };
 var challengeTags = [];
+var impactTags = [];
 var helpsTags = [];
 var moduleRows = [];
 var moduleCounter = 0;
@@ -366,7 +396,7 @@ function buildChecklist(items, containerId, stateKey) {
 
 function toggleItem(key, idx) {
   if (state[key][idx]) { delete state[key][idx]; } else { state[key][idx] = true; }
-  var cid = key === 'challenges' ? 'challenges-list' : 'helps-list';
+  var cid = key === 'challenges' ? 'challenges-list' : key === 'impacts' ? 'impact-list' : 'helps-list';
   var items = document.getElementById(cid).querySelectorAll('.check-item');
   for (var i = 0; i < items.length; i++) {
     items[i].classList.toggle('checked', !!state[key][i]);
@@ -494,6 +524,7 @@ function update() {
   document.getElementById('prev-footer-date').textContent = date ? fmtDate(date) : '';
 
   updatePills('prev-challenges', state.challenges, CHALLENGES, challengeTags);
+  updatePills('prev-impacts', state.impacts, IMPACTS, impactTags);
   updatePills('prev-helps', state.helps, HELPS, helpsTags);
 
   /* Customer stories */
@@ -606,8 +637,10 @@ function downloadPDF() {
 
 /* ─── Init ─── */
 buildChecklist(CHALLENGES, 'challenges-list', 'challenges');
+buildChecklist(IMPACTS, 'impact-list', 'impacts');
 buildChecklist(HELPS, 'helps-list', 'helps');
 setupTagInput('challengeTagInput', 'challenge-tags-wrap', challengeTags);
+setupTagInput('impactTagInput', 'impact-tags-wrap', impactTags);
 setupTagInput('helpsTagInput', 'helps-tags-wrap', helpsTags);
 document.getElementById('propDate').valueAsDate = new Date();
 update();
